@@ -1,0 +1,67 @@
+CC = gcc
+
+CSTANDARD = c99
+
+CFLAGS_DEBUG = -Wall -Wextra -Werror \
+               -Wpointer-arith -Wcast-align -Wint-conversion \
+               -Wstrict-prototypes -Wwrite-strings -Waggregate-return \
+               -Wswitch-default -Wswitch-enum -Wunreachable-code \
+               -Wunused-parameter -Wuninitialized -Winit-self \
+               -Wbad-function-cast -Wcast-align\
+               -Wformat=2 -Wlogical-op -Wmissing-include-dirs \
+               -Wredundant-decls -Wsequence-point -Wshadow \
+               -Wswitch -Wundef -Wunused-but-set-parameter \
+               -Wcast-qual  -Wfloat-equal -Wnested-externs \
+	       -Wpedantic  -pedantic-errors \
+	       -O0 -g \
+	       -fsanitize=address \
+	       # -DDEBUG -rdynamic \
+	       # BEWARE -rdynamic breaks leak check on fsanitize
+
+CFLAGS = -Wall -Wextra -Werror \
+	 -O2
+
+TEST_TARGET = test.out
+TEST_SRC =  test/*.c *.c mr_utils/*.c
+
+SPACERS_TARGET= ./spacers
+SPACERS_SRC =  mr_utils/tools/*.c  mr_utils/*.c
+
+LINKS = -lSDL3 -lSDL3_ttf
+
+DEBUG_LEVEL = MRD_DEBUG_BACKTRACE
+# DEBUG_LEVEL = MRD_DEBUG_DEFAULT
+
+.PHONY: all build run clean format format-check bear test check debug build-debug build-debug-spacers
+
+all: test
+
+test: build run
+
+build:
+	$(CC) -std=$(CSTANDARD) $(CFLAGS) -o $(TEST_TARGET) $(TEST_SRC) $(LINKS)
+
+run:
+	./$(TEST_TARGET)
+
+clean:
+	-rm -f $(TEST_TARGET) $(SPACERS_TARGET)
+
+format: build-debug-spacers
+	find *.c *.h test/* | xargs clang-format -i --verbose && git ls-files | xargs $(SPACERS_TARGET)
+
+format-check: build-debug-spacers
+	find *.c *.h test/* | xargs clang-format --dry-run --Werror --verbose && git ls-files | xargs $(SPACERS_TARGET) --check
+
+bear: # this is for creating the compile_commands.json file
+	rm -f compile_commands.json && bear -- make build-debug
+
+check: format-check build-debug run
+
+debug:  build-debug run
+
+build-debug:
+	$(CC) -std=$(CSTANDARD) $(CFLAGS_DEBUG) -D $(DEBUG_LEVEL) -o $(TEST_TARGET) $(TEST_SRC) $(LINKS)
+
+build-debug-spacers:
+	$(CC) -std=$(CSTANDARD) $(CFLAGS_DEBUG) -D $(DEBUG_LEVEL) -o $(SPACERS_TARGET) $(SPACERS_SRC)

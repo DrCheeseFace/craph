@@ -1,0 +1,13 @@
+#ifndef UTILS_H
+#define UTILS_H
+
+#include <stdint.h>
+
+struct color {
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
+};
+
+#endif // !UTILS_H
+
